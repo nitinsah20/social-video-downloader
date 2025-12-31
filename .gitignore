@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Downloads
+downloads/
+
+# yt-dlp cookies
+youtube_cookies.txt
+instagram_cookies.txt
+
+# Vite / React
+.vite/
+
+# OS
+.DS_Store
+Thumbs.db
