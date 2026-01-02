@@ -8,6 +8,7 @@ import Instagram from "./pages/Instagram";
 import Twitter from "./pages/Twitter";
 import Facebook from "./pages/Facebook";
 import TikTok from "./pages/TikTok";
+import Reddit from "./pages/Reddit";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/twitter" element={<Twitter />} />
           <Route path="/facebook" element={<Facebook />} />
           <Route path="/tiktok" element={<TikTok />} />
+          <Route path="/reddit" element={<Reddit/>}/>
         </Routes>
       </main>
       

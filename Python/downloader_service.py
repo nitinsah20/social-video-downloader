@@ -1,127 +1,167 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import Response
 import yt_dlp
 import os
 import re
-import threading
+import asyncio
 import time
-
-# -- Paths --
-BASE_DIR = os.path.dirname(__file__)
-DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
-COOKIES_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt") 
-
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
-# FFmpeg Path 
-FFMPEG_PATH = r"C:\Users\ATAL WEB SOLUTION\Downloads\ffmpeg-2025-12-22-git-c50e5c7778-essentials_build\ffmpeg-2025-12-22-git-c50e5c7778-essentials_build\bin\ffmpeg.exe"
+import requests
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# -Utils -
-def safe_filename(title: str) -> str:
+@app.get("/thumbnail")
+def get_thumbnail(url: str):
+    try:
+        r = requests.get(url)
+        r.raise_for_status()  # agar fail ho jaye to exception
+        return Response(content=r.content, media_type="image/webp")
+    except requests.RequestException as e:
+        return Response(content=f"Error fetching image: {str(e)}", status_code=500)
     
-    title = re.sub(r'[^\w\s-]', '', title)
-    return re.sub(r'\s+', ' ', title).strip()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def auto_delete(path: str, delay: int = 1800): 
-    def delete_file():
-        time.sleep(delay)
-        if os.path.exists(path):
-            try:
-                os.remove(path)
-                print(f"File auto-deleted after 30 mins: {path}")
-            except Exception as e:
-                print(f"Error in auto-delete: {e}")
-    threading.Thread(target=delete_file, daemon=True).start()
+# Configuration
+DOWNLOAD_DIR = os.path.join(os.path.dirname(__file__), "downloads")
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def get_ydl_opts(is_download=False, file_type="mp4"):
-    opts = {
+# APNA FFMPEG PATH YAHAN CHECK KARLENA
+FFMPEG_PATH = r"C:\Users\ATAL WEB SOLUTION\Downloads\ffmpeg-2025-12-22-git-c50e5c7778-essentials_build\ffmpeg-2025-12-22-git-c50e5c7778-essentials_build\bin\ffmpeg.exe"
+
+progress_db = {}
+
+def clean_ansi(text):
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+async def auto_delete_file(file_path, delay=600): # 10 minutes baad delete
+    await asyncio.sleep(delay)
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Cleanup: Deleted {file_path}")
+    except Exception as e:
+        print(f"Cleanup Error: {e}")
+
+def my_hook(d):
+    v_id = d.get('info_dict', {}).get('id', 'temp')
+    if d['status'] == 'downloading':
+        try:
+            p_raw = d.get('_percent_str', '0%')
+            p_clean = clean_ansi(p_raw).replace('%', '').strip()
+            progress_db[v_id] = float(p_clean)
+        except:
+            pass
+    elif d['status'] == 'finished':
+        progress_db[v_id] = 95 # Download done, merging start
+
+def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
+    try:
+        progress_db[video_id] = 1
         
-        "cookiefile": COOKIES_FILE if os.path.exists(COOKIES_FILE) else None,
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "quiet": True,
-        "nocheckcertificate": True,
-        "no_warnings": True,
-    }
-    if is_download:
+        ydl_opts = {
+            'ffmpeg_location': FFMPEG_PATH,
+            'outtmpl': os.path.join(DOWNLOAD_DIR, f"{video_id}.%(ext)s"),
+            'progress_hooks': [my_hook],
+            'quiet': True,
+            'no_warnings': True,
+            'nocolor': True,
+        }
+
         if file_type == "mp3":
-            opts.update({
-                "format": "bestaudio/best",
-                "outtmpl": os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s"),
-                "ffmpeg_location": FFMPEG_PATH,
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
+            ydl_opts.update({
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
                 }],
             })
         else:
-            opts.update({
-                "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-                "outtmpl": os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s"),
-                "ffmpeg_location": FFMPEG_PATH,
-                "merge_output_format": "mp4",
-                "writethumbnail": False,
+            ydl_opts.update({
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                'merge_output_format': 'mp4',
             })
-    return opts
 
-# - API -
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            title = info.get('title', 'video')
+            # Hindi aur special characters handle karne ke liye
+            safe_title = re.sub(r'[^\w\s-]', '', title).strip()
+            if not safe_title: safe_title = "downloaded_file"
+
+        ext = "mp3" if file_type == "mp3" else "mp4"
+        old_file = os.path.join(DOWNLOAD_DIR, f"{video_id}.{ext}")
+        new_filename = f"{safe_title}_{int(time.time())}.{ext}" 
+        new_file = os.path.join(DOWNLOAD_DIR, new_filename)
+
+        if os.path.exists(old_file):
+            if os.path.exists(new_file): os.remove(new_file)
+            os.rename(old_file, new_file)
+            
+            # Progress update and Auto-delete schedule
+            progress_db[f"{video_id}_file"] = new_filename
+            progress_db[video_id] = 100
+            background_tasks.add_task(auto_delete_file, new_file)
+            print(f"--- READY: {new_filename} ---")
+        else:
+            print("Error: File not found after download")
+            progress_db[video_id] = -1
+
+    except Exception as e:
+        print(f"Task Error: {str(e)}")
+        progress_db[video_id] = -1
+
 @app.post("/info")
-def post_info(data: dict):
+async def get_info(data: dict):
     url = data.get("url")
-    if not url:
-        raise HTTPException(status_code=400, detail="URL missing")
+    if not url: raise HTTPException(status_code=400, detail="URL missing")
     try:
-        with yt_dlp.YoutubeDL(get_ydl_opts()) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
             info = ydl.extract_info(url, download=False)
             return {
-                "title": info.get("title", "Video"), 
-                "thumbnail": info.get("thumbnail"), 
+                "title": info.get("title"),
+                "thumbnail": info.get("thumbnail"),
                 "video_id": info.get("id"),
                 "url": url
             }
     except Exception as e:
-        raise HTTPException(status_code=429, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/download")
-def download_video(data: dict):
+async def start_download(data: dict, background_tasks: BackgroundTasks):
+    v_id = data.get("video_id")
     url = data.get("url")
-    file_type = data.get("format", "mp4")
-    try:
-        with yt_dlp.YoutubeDL(get_ydl_opts(True, file_type)) as ydl:
-            info = ydl.extract_info(url, download=True)
-            video_id = info["id"]
-            title_safe = safe_filename(info.get("title", "video"))
-            
-        ext = "mp3" if file_type == "mp3" else "mp4"
-        final_name = f"{title_safe}.{ext}"
+    fmt = data.get("format", "mp4")
+    
+    if not v_id or not url:
+        raise HTTPException(status_code=400, detail="Missing data")
         
-      
-        old_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.{ext}")
-        new_path = os.path.join(DOWNLOAD_DIR, final_name)
+    progress_db[v_id] = 0
+    background_tasks.add_task(download_task, url, fmt, v_id, background_tasks)
+    return {"status": "started", "video_id": v_id}
 
-        if os.path.exists(old_path):
-            if os.path.exists(new_path): os.remove(new_path)
-            os.rename(old_path, new_path)
-        
-        
-        auto_delete(new_path, 1800) 
-        
-        return {"status": "success", "filename": final_name}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+@app.get("/progress/{video_id}")
+async def get_progress(video_id: str):
+    return {
+        "progress": progress_db.get(video_id, 0),
+        "filename": progress_db.get(f"{video_id}_file")
+    }
 
 @app.get("/file/{name}")
-def get_file(name: str):
+async def serve_file(name: str):
     path = os.path.join(DOWNLOAD_DIR, name)
     if os.path.exists(path):
-       
-        return FileResponse(
-            path=path, 
-            filename=name, 
-            media_type="video/mp4" if name.endswith(".mp4") else "audio/mpeg"
-        )
-    raise HTTPException(status_code=404, detail="File not found")
+        return FileResponse(path, filename=name)
+    return {"error": "File already deleted or not found"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
