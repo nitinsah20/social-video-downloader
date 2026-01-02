@@ -20,8 +20,8 @@ export default function Footer() {
               Social Video Downloader
             </h2>
             <p className="text-sm mt-3 text-gray-400 leading-relaxed">
-              Download videos and audio from YouTube, Instagram, Facebook,
-              Twitter and more. Fast, free & secure social media downloader.
+              Download high-quality videos and audio files from YouTube, Instagram, Facebook, Twitter(X), TikTok, Reddit, and Pinterest. Fast, free, and secure social media video downloader online.
+
             </p>
 
             {/* SEO KEYWORDS (hidden but readable) */}

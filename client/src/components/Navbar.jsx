@@ -60,6 +60,13 @@ export default function Navbar() {
             >
               TikTok
             </Link>
+
+            <Link
+              to="/reddit"
+              className="hover:bg-slate-900 px-3 py-2 rounded-md hover:scale-105 transition-transform duration-500 cursor-pointer"
+            >
+              Reddit
+            </Link>
           </div>
 
           {/* Mobile menu button */}

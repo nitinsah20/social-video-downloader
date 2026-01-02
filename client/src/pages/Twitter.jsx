@@ -7,6 +7,8 @@ export default function Twitter() {
         <DownloaderBox 
         title='Twitter Video'
         placeholder='Paste link here (e.g. https://twitter.com/...)'
+        paragraph='Download Twitter (X) videos and GIFs instantly in high quality using our easy-to-use Twitter video downloader.
+'
         />
     </>
   )

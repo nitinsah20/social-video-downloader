@@ -2,16 +2,24 @@ import { useState } from "react";
 
 const faqs = [
   {
-    q: "Is this service free to use?",
-    a: "Yes, our downloader is 100% free and requires no registration or software installation."
+    q: "Is this social video downloader free to use?",
+    a: "Yes, this tool is absolutely free to use. You can download your videos and audio from all supported social media sites completely free."
   },
   {
-    q: "Which platforms are supported?",
-    a: "We currently support YouTube, Instagram, Facebook, Twitter, and TikTok."
+    q: "Which social media platforms are supported?",
+    a: "Our downloader is compatible with popular platforms such as Facebook, Instagram, YouTube, Twitter (X), and TikTok, among many others. Compatibility with Reddit and Pinterest is coming next."
   },
   {
-    q: "Is there a limit on downloads?",
-    a: "No! You can download as many videos as you want without any restrictions."
+    q: "Do I need to create an account to download videos?",
+    a: "There is no need to register and log in. You can easily download your video by copying its link."
+  },
+  {
+    q: "Can I download videos on mobile devices?",
+    a: "Yes, this downloader is working well with cell phones, tablets, as well as computers. It is compatible with every browser."
+  },
+  {
+    q: "Is it safe to use this video downloader?",
+    a: "Well, the truth is that our platform is absolutely safe and secure. This is why we don't store your data or the files that you download."
   }
 ];
 

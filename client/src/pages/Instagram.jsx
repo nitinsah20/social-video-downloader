@@ -7,6 +7,7 @@ export default function Instagram() {
       <DownloaderBox 
         title="Instagram Video"
         placeholder="Paste link here (e.g. https://instagram.com/...)"
+        paragraph="Download Instagram videos, reels, and IGTV effortlessly in HD from our safe and easy-to-use Instagram downloader."
       />
     </div>
   );

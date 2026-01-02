@@ -3,22 +3,22 @@ import { Zap, ShieldCheck, Monitor, Music } from "lucide-react";
 const features = [
   {
     title: "High Quality",
-    desc: "Download videos in the highest available resolution, up to 4K.",
+    desc: "Download social media videos at the maximum resolution available, including HD resolution and Full HD resolution. Benefit from clear visuals and original quality from supported platforms.",
     icon: <Monitor className="w-8 h-8 text-blue-500" />,
   },
   {
     title: "MP3 Conversion",
-    desc: "Extract high-quality audio from any video instantly.",
+    desc: "Turn social media video files into premium audio MP3 in seconds. Best suited for saving audio files from video links.",
     icon: <Music className="w-8 h-8 text-purple-500" />,
   },
   {
     title: "Fast & Free",
-    desc: "No registration or subscription needed. Unlimited downloads.",
+    desc: "Download videos at lightning speed using our fast free online video downloader. Download as many videos as you want and at no cost.",
     icon: <Zap className="w-8 h-8 text-yellow-500" />,
   },
   {
     title: "Safe & Secure",
-    desc: "We don't store your data. Safe browsing guaranteed.",
+    desc: "We respect privacy and do not collect user information and download data. We provide you with a safe and virus-free video download service.",
     icon: <ShieldCheck className="w-8 h-8 text-green-500" />,
   },
 ];
