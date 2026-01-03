@@ -1,56 +1,135 @@
-# 🎬 Social Video Downloader
+# 🎥 Social Video Downloader (Demo)
 
-A full-stack social media video downloader built using modern technologies:
+A modern **React + FastAPI** based social video downloader web app.  
+This project is deployed as a **demo on Vercel** to showcase UI, flow, and API integration.
 
-- ⚛️ Frontend: React + Tailwind CSS  
-- 🐍 Backend: FastAPI + yt-dlp  
-- 🎵 Download audio as MP3 & 🎥 videos as MP4  
-
----
-
-## ✅ Supported Platforms
-- YouTube  
-- Instagram  
-- Facebook  
-- Twitter (X)  
-- Reddit (non-DRM)  
-
-❌ Snapchat & Pinterest are not supported due to platform restrictions.
+⚠️ **Important:**  
+This Vercel deployment is for **demo/testing only**.  
+Actual video downloading (MP4 / MP3) requires a VPS with FFmpeg support.
 
 ---
 
-## 🌟 Features
-- Download videos and audio from popular social platforms  
-- High-quality MP4 video downloads  
-- MP3 audio extraction  
-- Fast and lightweight backend powered by FastAPI  
-- Modern, responsive frontend using React and Tailwind CSS  
-- Easy setup and development with local server  
+## ✨ Features
+
+- 🌐 Download videos from:
+  - YouTube
+  - Instagram
+  - Facebook
+  - Twitter (X)
+- 📸 Thumbnail preview & download
+- 📊 Real-time download progress UI
+- ⚡ Fast & modern UI (React + Tailwind CSS)
+- 🔌 FastAPI backend
+- ☁️ Vercel deployment (Frontend + API)
 
 ---
 
-## 🚀 Setup Instructions
+## 🧱 Tech Stack
 
-### Backend (Python) 
-```bash
-cd python
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
+### Frontend
+- React (Vite)
+- Tailwind CSS
+- Axios
+- Lucide Icons
 
-### Frontend (React + Tailwind CSS)
+### Backend
+- FastAPI
+- yt-dlp
+- FFmpeg (required for real downloads)
+- Mangum (for Vercel serverless)
 
-The frontend of this project is built with **React** and styled using **Tailwind CSS** for a modern and responsive design.  
+---
 
-#### Setup
+## 📁 Project Structure
+
+project-root/
+│
+├── client/ # React frontend
+│ ├── src/
+│ ├── package.json
+│ └── vite.config.js
+│
+├── api/ # FastAPI backend
+│ ├── index.py
+│ ├── requirements.txt
+│ └── downloads/
+│
+└── vercel.json
+
+
+
+---
+
+## 🚀 Live Demo (Vercel)
+
+> ⚠️ Demo Only  
+> Video info & thumbnails work  
+> MP4 / MP3 download may fail due to Vercel limitations
+
+---
+
+## 🔌 API Endpoints
+
+| Endpoint | Method | Description |
+|--------|--------|-------------|
+| `/api/info` | POST | Fetch video info |
+| `/api/download` | POST | Start download |
+| `/api/progress/{id}` | GET | Download progress |
+| `/api/file/{name}` | GET | Download file |
+| `/api/thumbnail` | GET | Download thumbnail |
+
+---
+
+## ⚠️ Vercel Limitation (Very Important)
+
+Vercel serverless **does NOT support**:
+- FFmpeg processing
+- Long background tasks
+- Large video downloads
+
+So:
+- ✅ UI works
+- ✅ API responds
+- ❌ MP4 / MP3 downloads may fail
+
+---
+
+## ✅ Recommended Production Setup
+
+For **100% working video downloads**:
+
+- Frontend → **Vercel**
+- Backend → **VPS (FastAPI + Nginx)**
+- FFmpeg installed on server
+
+Supported VPS:
+- DigitalOcean
+- Hostinger VPS
+- AWS EC2
+
+---
+
+## 🛠️ Local Development
+
+### Frontend
 ```bash
 cd client
 npm install
 npm run dev
+
+### Backend (Python) 
+```bash
+cd api
+pip install -r requirements.txt
+uvicorn api:app --reload --port 8000
 ```
 
+
+
 ## ⚠️ Disclaimer
-> This project is for educational purposes only. Downloading copyrighted content without permission may violate platform terms and conditions.
+> This project is for educational purposes only.
+Downloading copyrighted content without permission may violate the terms of service of respective platforms.
+The author is not responsible for misuse.
 
 ## Project Images
 <img width="1742" height="868" alt="image" src="https://github.com/user-attachments/assets/d8119408-946e-4685-96d2-5c64a750035a" />
@@ -58,4 +137,7 @@ npm run dev
 <img width="786" height="818" alt="image" src="https://github.com/user-attachments/assets/96e5c0dd-a73c-48a7-a4f3-7b35a36460df" />
 
 
+👨‍💻 Author
 
+nitinsah20
+Made with ❤️ for learning & demo purposes
