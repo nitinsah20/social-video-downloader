@@ -49,7 +49,9 @@ export default function DownloaderBox({
     setLoading(true);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/info", { url: url });
+      const response = await axios.post("/api/info", {
+        url: url
+      });
       if (response.data) {
         setVideo({
           title: response.data.title,
@@ -79,7 +81,8 @@ export default function DownloaderBox({
     // 1. Start Polling Logic
     pollInterval.current = setInterval(async () => {
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/progress/${video.video_id}`);
+        const res = await axios.get(`/api/progress/${video.video_id}`);
+
 
         if (res.data.progress > 0) {
           setProgress(res.data.progress);
@@ -94,7 +97,8 @@ export default function DownloaderBox({
           clearInterval(pollInterval.current);
 
           // Force download using dynamic link (Hindi/Special characters fix)
-          const downloadUrl = `http://127.0.0.1:8000/file/${encodeURIComponent(res.data.filename)}`;
+          const downloadUrl = `/api/file/${encodeURIComponent(res.data.filename)}`;
+
           const link = document.createElement('a');
           link.href = downloadUrl;
           link.setAttribute('download', res.data.filename);
@@ -112,11 +116,12 @@ export default function DownloaderBox({
 
     // 3. Start Backend Download Task
     try {
-      await axios.post("http://127.0.0.1:8000/download", {
+      await axios.post("/api/download", {
         url: video.url,
         format: format,
         video_id: video.video_id
       });
+
     } catch (err) {
       setError("❌ Server Error");
       clearInterval(pollInterval.current);
@@ -124,23 +129,26 @@ export default function DownloaderBox({
     }
   };
 
- const downloadThumbnail = async () => {
-  try {
-    const response = await fetch(`http://localhost:8000/thumbnail?url=${encodeURIComponent(video.thumbnail)}`);
-    if (!response.ok) throw new Error("Failed to fetch from backend");
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "thumbnail.jpg";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error(err);
-  }
-};
+  const downloadThumbnail = async () => {
+    try {
+      const response = await fetch(
+        `/api/thumbnail?url=${encodeURIComponent(video.thumbnail)}`
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch from backend");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "thumbnail.jpg";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
 
   return (
@@ -204,8 +212,8 @@ export default function DownloaderBox({
 
           {statusMessage && !error && (
             <div className={`w-full p-5 rounded-2xl font-bold border flex items-center justify-center gap-3 transition-all ${statusMessage.includes('✅')
-                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                : 'bg-blue-500/10 text-blue-400 border-blue-500/20 animate-pulse'
+              ? 'bg-green-500/10 text-green-400 border-green-500/20'
+              : 'bg-blue-500/10 text-blue-400 border-blue-500/20 animate-pulse'
               }`}>
               {statusMessage.includes('✅') ? <CheckCircle size={22} /> : <Loader2 size={22} className="animate-spin" />}
               {statusMessage}
