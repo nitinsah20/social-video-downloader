@@ -24,6 +24,15 @@ COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
 
 progress_db = {}
 
+# Common Options to prevent Bot Detection
+COMMON_YDL_OPTS = {
+    "quiet": True,
+    "no_warnings": True,
+    "nocolor": True,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "referer": "https://www.youtube.com/",
+}
+
 def clean_ansi(text):
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
@@ -51,17 +60,11 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
     try:
         progress_db[video_id] = 1
 
-        ydl_opts = {
+        ydl_opts = COMMON_YDL_OPTS.copy()
+        ydl_opts.update({
             "outtmpl": os.path.join(DOWNLOAD_DIR, f"{video_id}.%(ext)s"),
             "progress_hooks": [my_hook],
-            "quiet": True,
-            "no_warnings": True,
-            "nocolor": True,
-            # --- OAuth2 & Anti-Bot Settings ---
-            "username": "oauth2",
-            "password": "",
-            "referer": "https://www.youtube.com/",
-        }
+        })
 
         if os.path.exists(COOKIE_FILE):
             ydl_opts["cookiefile"] = COOKIE_FILE
@@ -110,12 +113,7 @@ async def get_info(data: dict):
         raise HTTPException(status_code=400, detail="URL missing")
 
     try:
-        opts = {
-            "quiet": True, 
-            "no_warnings": True,
-            "username": "oauth2",
-            "password": ""
-        }
+        opts = COMMON_YDL_OPTS.copy()
         if os.path.exists(COOKIE_FILE):
             opts["cookiefile"] = COOKIE_FILE
 
@@ -129,7 +127,6 @@ async def get_info(data: dict):
             "url": url
         }
     except Exception as e:
-        # यहाँ लॉग्स में कोड आएगा, उसे ध्यान से देखें
         print(f"INFO ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
