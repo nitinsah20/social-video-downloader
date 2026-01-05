@@ -18,7 +18,7 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(__file__)
 COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
 
-@app.post("/api/info")
+@app.post("/info")
 async def get_info(data: dict):
     url = data.get("url")
     if not url:
@@ -42,7 +42,7 @@ async def get_info(data: dict):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/api/thumbnail")
+@app.get("/thumbnail")
 def get_thumbnail(url: str):
     try:
         r = requests.get(url)

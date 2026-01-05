@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-@app.post("/api/download")
+@app.post("/download")
 async def download_video(data: dict):
     url = data.get("url")
     fmt = data.get("format", "mp4")
