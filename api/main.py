@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(__file__)
 
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-COOKIE_FILE = os.path.join(BASE_DIR, "instagram_cookies.txt")
+COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
 
 FFMPEG_PATH = None
 
