@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://social-video-api-xyz.onrender.com"; 
+const API_BASE_URL = "https://social-video-downloader-0pkq.onrender.com"; 
 
 export const getVideoInfo = (url) => {
   return axios.post(`${API_BASE_URL}/info`, { url }); 
