@@ -7,7 +7,7 @@ from mangum import Mangum
 
 app = FastAPI()
 
-#CORS
+# CORS Setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,17 +17,12 @@ app.add_middleware(
 )
 
 # PATHS
-
 BASE_DIR = os.path.dirname(__file__)
-
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
 
-FFMPEG_PATH = None
-
 progress_db = {}
-
 
 def clean_ansi(text):
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -49,10 +44,8 @@ def my_hook(d):
             progress_db[video_id] = float(percent)
         except:
             pass
-
     elif d["status"] == "finished":
         progress_db[video_id] = 95
-
 
 def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
     try:
@@ -64,9 +57,12 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
             "quiet": True,
             "no_warnings": True,
             "nocolor": True,
+            # --- OAuth2 & Anti-Bot Settings ---
+            "username": "oauth2",
+            "password": "",
+            "referer": "https://www.youtube.com/",
         }
 
-       
         if os.path.exists(COOKIE_FILE):
             ydl_opts["cookiefile"] = COOKIE_FILE
 
@@ -92,7 +88,6 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
 
         ext = "mp3" if file_type == "mp3" else "mp4"
         old_file = os.path.join(DOWNLOAD_DIR, f"{video_id}.{ext}")
-
         new_name = f"{safe_title}_{int(time.time())}.{ext}"
         new_file = os.path.join(DOWNLOAD_DIR, new_name)
 
@@ -108,8 +103,6 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
         print("DOWNLOAD ERROR:", e)
         progress_db[video_id] = -1
 
-# API ROUTES
-
 @app.post("/info")
 async def get_info(data: dict):
     url = data.get("url")
@@ -117,7 +110,12 @@ async def get_info(data: dict):
         raise HTTPException(status_code=400, detail="URL missing")
 
     try:
-        opts = {"quiet": True, "no_warnings": True}
+        opts = {
+            "quiet": True, 
+            "no_warnings": True,
+            "username": "oauth2",
+            "password": ""
+        }
         if os.path.exists(COOKIE_FILE):
             opts["cookiefile"] = COOKIE_FILE
 
@@ -131,6 +129,8 @@ async def get_info(data: dict):
             "url": url
         }
     except Exception as e:
+        # यहाँ लॉग्स में कोड आएगा, उसे ध्यान से देखें
+        print(f"INFO ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/download")
@@ -144,7 +144,6 @@ async def start_download(data: dict, background_tasks: BackgroundTasks):
 
     progress_db[video_id] = 0
     background_tasks.add_task(download_task, url, fmt, video_id, background_tasks)
-
     return {"status": "started", "video_id": video_id}
 
 @app.get("/progress/{video_id}")
@@ -170,14 +169,4 @@ def get_thumbnail(url: str):
     except:
         raise HTTPException(status_code=500, detail="Thumbnail fetch failed")
 
-
-# VERCEL HANDLER 
-
 handler = Mangum(app)
-
-
-# # LOCAL RUN
-
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="127.0.0.1", port=8000)   
