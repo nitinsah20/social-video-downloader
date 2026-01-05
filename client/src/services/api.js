@@ -12,4 +12,4 @@ export const getDownloadProgress = (videoId) => {
   return axios.get(`${API_BASE_URL}/progress/${videoId}`);
 };
 
-// final deploy
+// final deployed
