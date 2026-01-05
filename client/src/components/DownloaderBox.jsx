@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"; // Added useRef
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Youtube,
@@ -11,12 +11,14 @@ import {
   AlertCircle
 } from "lucide-react";
 
+// --- backend URL ---
+const API_BASE_URL = "https://social-video-downloader-0pkq.onrender.com";
+
 export default function DownloaderBox({
   title = "Social Video",
   placeholder = "Paste link here (e.g. https://youtube.com/...)",
   paragraph = "Download videos and reels from Facebook, Instagram, YouTube, Twitter (X), TikTok, and more in high quality with a fast and easy online video downloader."
 }) {
-  // --- States ---
   const [url, setUrl] = useState("");
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,10 +27,8 @@ export default function DownloaderBox({
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
 
-  // UseRef to track interval cleanup
   const pollInterval = useRef(null);
 
-  // --- Platform Icons Configuration ---
   const platforms = [
     { name: "YouTube", icon: <Youtube size={20} />, color: "hover:text-red-500" },
     { name: "Instagram", icon: <Instagram size={20} />, color: "hover:text-pink-500" },
@@ -36,7 +36,6 @@ export default function DownloaderBox({
     { name: "Twitter", icon: <Twitter size={20} />, color: "hover:text-sky-400" },
   ];
 
-  // --- Fetch Video Details ---
   const fetchVideo = async () => {
     if (!url) {
       setError("❌ Bhai URL to daal pehle");
@@ -49,7 +48,8 @@ export default function DownloaderBox({
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/info", {
+      // Fixed: URL updated to Render backend
+      const response = await axios.post(`${API_BASE_URL}/info`, {
         url: url
       });
       if (response.data) {
@@ -67,7 +67,6 @@ export default function DownloaderBox({
     }
   };
 
-  // --- Updated Real-Time Download Handler ---
   const handleDownload = async (format) => {
     if (!video || !video.video_id) return;
 
@@ -75,29 +74,25 @@ export default function DownloaderBox({
     setProgress(0);
     setStatusMessage(`⏳ Preparing ${format.toUpperCase()}...`);
 
-    // Clear any existing interval
     if (pollInterval.current) clearInterval(pollInterval.current);
 
-    // 1. Start Polling Logic
     pollInterval.current = setInterval(async () => {
       try {
-        const res = await axios.get(`/api/progress/${video.video_id}`);
-
+        // Fixed: URL updated to Render backend
+        const res = await axios.get(`${API_BASE_URL}/progress/${video.video_id}`);
 
         if (res.data.progress > 0) {
           setProgress(res.data.progress);
-          // If merging stage
           if (res.data.progress >= 95 && res.data.progress < 100) {
             setStatusMessage("⚡ Merging high quality files...");
           }
         }
 
-        // 2. DOWNLOAD TRIGGER: Jab 100% ho aur filename mil jaye
         if (res.data.progress === 100 && res.data.filename) {
           clearInterval(pollInterval.current);
 
-          // Force download using dynamic link (Hindi/Special characters fix)
-          const downloadUrl = `/api/file/${encodeURIComponent(res.data.filename)}`;
+          // Fixed: URL updated to Render backend
+          const downloadUrl = `${API_BASE_URL}/file/${encodeURIComponent(res.data.filename)}`;
 
           const link = document.createElement('a');
           link.href = downloadUrl;
@@ -114,9 +109,9 @@ export default function DownloaderBox({
       }
     }, 800);
 
-    // 3. Start Backend Download Task
     try {
-      await axios.post("/api/download", {
+      // Fixed: URL updated to Render backend
+      await axios.post(`${API_BASE_URL}/download`, {
         url: video.url,
         format: format,
         video_id: video.video_id
@@ -131,8 +126,9 @@ export default function DownloaderBox({
 
   const downloadThumbnail = async () => {
     try {
+      // Fixed: URL updated to Render backend
       const response = await fetch(
-        `/api/thumbnail?url=${encodeURIComponent(video.thumbnail)}`
+        `${API_BASE_URL}/thumbnail?url=${encodeURIComponent(video.thumbnail)}`
       );
 
       if (!response.ok) throw new Error("Failed to fetch from backend");
@@ -150,14 +146,10 @@ export default function DownloaderBox({
     }
   };
 
-
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-20 bg-slate-900 overflow-hidden text-slate-200">
-
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-600/10 blur-[150px] rounded-full -z-10 animate-pulse"></div>
-
       <div className="w-full max-w-2xl space-y-10 z-10">
-
         <div className="space-y-4 text-center">
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white drop-shadow-2xl">
             {title} <span className="text-blue-500 italic">PRO</span>
@@ -240,7 +232,6 @@ export default function DownloaderBox({
               DOWNLOAD THUMBNAIL
             </button>
 
-
             <h2 className="mt-4 font-bold text-2xl text-white mb-8 line-clamp-2 leading-tight tracking-tight">
               {video.title}
             </h2>
@@ -275,7 +266,6 @@ export default function DownloaderBox({
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );
