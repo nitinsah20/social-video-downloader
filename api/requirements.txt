@@ -1,5 +1,5 @@
 fastapi
 uvicorn
-yt-dlp
 mangum
 requests
+yt-dlp>=2025.01.15
