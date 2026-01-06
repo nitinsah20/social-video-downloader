@@ -121,23 +121,47 @@ async def get_info(data: dict):
     if not url:
         raise HTTPException(status_code=400, detail="URL missing")
 
-    try:
-        opts = COMMON_YDL_OPTS.copy()
-        if os.path.exists(COOKIE_FILE):
-            opts["cookiefile"] = COOKIE_FILE
+    last_error = "Unknown error"
+    
+    # हम दो बार कोशिश करेंगे: 1. Proxy के साथ, 2. बिना Proxy के
+    attempts = [
+        {"use_proxy": True, "label": "With Proxy"},
+        {"use_proxy": False, "label": "Without Proxy"}
+    ]
 
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+    for attempt in attempts:
+        try:
+            opts = COMMON_YDL_OPTS.copy()
+         
+            if not attempt["use_proxy"]:
+                opts.pop("proxy", None)
+            
+            if os.path.exists(COOKIE_FILE):
+                opts["cookiefile"] = COOKIE_FILE
 
-        return {
-            "title": info.get("title"),
-            "thumbnail": info.get("thumbnail"),
-            "video_id": info.get("id"),
-            "url": url
-        }
-    except Exception as e:
-        print(f"INFO ERROR: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+            print(f"DEBUG: Trying {attempt['label']} for URL: {url}")
+
+            with yt_dlp.YoutubeDL(opts) as ydl:
+             
+                info = ydl.extract_info(url, download=False)
+                
+                return {
+                    "title": info.get("title"),
+                    "thumbnail": info.get("thumbnail"),
+                    "video_id": info.get("id"),
+                    "url": url,
+                    "fetched_via": attempt["label"]
+                }
+        
+        except Exception as e:
+            last_error = str(e)
+            print(f"INFO ERROR ({attempt['label']}): {last_error}")
+            continue 
+
+    raise HTTPException(
+        status_code=400, 
+        detail=f"Both attempts failed. Last error: {last_error}"
+    )
 
 @app.post("/download")
 async def start_download(data: dict, background_tasks: BackgroundTasks):
