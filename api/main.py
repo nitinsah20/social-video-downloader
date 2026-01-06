@@ -21,7 +21,6 @@ BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
-# PROXY_URL = "http://27.34.242.98:80"
 
 progress_db = {}
 
@@ -30,7 +29,6 @@ COMMON_YDL_OPTS = {
     "quiet": True,
     "no_warnings": True,
     "nocolor": True,
-    # "proxy": PROXY_URL,
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "referer": "https://www.youtube.com/",
     "geo_bypass": True,
@@ -121,45 +119,23 @@ async def get_info(data: dict):
     if not url:
         raise HTTPException(status_code=400, detail="URL missing")
 
-    last_error = "Unknown error"
-    attempts = [
-        {"use_proxy": True, "label": "With Proxy"},
-        {"use_proxy": False, "label": "Without Proxy"}
-    ]
+    try:
+        opts = COMMON_YDL_OPTS.copy()
+        if os.path.exists(COOKIE_FILE):
+            opts["cookiefile"] = COOKIE_FILE
 
-    for attempt in attempts:
-        try:
-            opts = COMMON_YDL_OPTS.copy()
-         
-            if not attempt["use_proxy"]:
-                opts.pop("proxy", None)
-            
-            if os.path.exists(COOKIE_FILE):
-                opts["cookiefile"] = COOKIE_FILE
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
 
-            print(f"DEBUG: Trying {attempt['label']} for URL: {url}")
-
-            with yt_dlp.YoutubeDL(opts) as ydl:
-             
-                info = ydl.extract_info(url, download=False)
-                
-                return {
-                    "title": info.get("title"),
-                    "thumbnail": info.get("thumbnail"),
-                    "video_id": info.get("id"),
-                    "url": url,
-                    "fetched_via": attempt["label"]
-                }
-        
-        except Exception as e:
-            last_error = str(e)
-            print(f"INFO ERROR ({attempt['label']}): {last_error}")
-            continue 
-
-    raise HTTPException(
-        status_code=400, 
-        detail=f"Both attempts failed. Last error: {last_error}"
-    )
+        return {
+            "title": info.get("title"),
+            "thumbnail": info.get("thumbnail"),
+            "video_id": info.get("id"),
+            "url": url
+        }
+    except Exception as e:
+        print(f"INFO ERROR: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/download")
 async def start_download(data: dict, background_tasks: BackgroundTasks):
@@ -191,70 +167,10 @@ async def serve_file(name: str):
 @app.get("/thumbnail")
 def get_thumbnail(url: str):
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url)
         r.raise_for_status()
         return Response(content=r.content, media_type="image/webp")
-    except Exception as e:
-        print(f"Thumbnail Error: {e}")
+    except:
         raise HTTPException(status_code=500, detail="Thumbnail fetch failed")
-
-
-def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
-    try:
-        progress_db[video_id] = 1
-        
-        ydl_opts = COMMON_YDL_OPTS.copy()
-        ydl_opts.update({
-            "outtmpl": os.path.join(DOWNLOAD_DIR, f"{video_id}.%(ext)s"),
-            "progress_hooks": [my_hook],
-            "nocheckcertificate": True,
-        })
-
-        if os.path.exists(COOKIE_FILE):
-            ydl_opts["cookiefile"] = COOKIE_FILE
-
-        if file_type == "mp3":
-            ydl_opts.update({
-                "format": "bestaudio/best",
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
-                }]
-            })
-        else:
-            ydl_opts.update({
-                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-                "merge_output_format": "mp4"
-            })
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-        ext = "mp3" if file_type == "mp3" else "mp4"
-        downloaded_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.{ext}")
-
-        if not os.path.exists(downloaded_path):
-            potential_files = [f for f in os.listdir(DOWNLOAD_DIR) if f.startswith(video_id)]
-            if potential_files:
-                downloaded_path = os.path.join(DOWNLOAD_DIR, potential_files[0])
-                ext = potential_files[0].split('.')[-1]
-
-        if os.path.exists(downloaded_path):
-            unique_name = f"video_{int(time.time())}.{ext}"
-            final_path = os.path.join(DOWNLOAD_DIR, unique_name)
-            
-            os.rename(downloaded_path, final_path)
-            
-            progress_db[f"{video_id}_file"] = unique_name
-            progress_db[video_id] = 100
-            
-            background_tasks.add_task(auto_delete_file, final_path)
-        else:
-            progress_db[video_id] = -1
-
-    except Exception as e:
-        print(f"DOWNLOAD ERROR: {str(e)}")
-        progress_db[video_id] = -1
 
 handler = Mangum(app)
