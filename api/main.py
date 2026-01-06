@@ -21,6 +21,7 @@ BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
+PROXY_URL = "http://27.34.242.98:80"
 
 progress_db = {}
 
@@ -29,6 +30,7 @@ COMMON_YDL_OPTS = {
     "quiet": True,
     "no_warnings": True,
     "nocolor": True,
+    "proxy": PROXY_URL,
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "referer": "https://www.youtube.com/",
     "geo_bypass": True,
