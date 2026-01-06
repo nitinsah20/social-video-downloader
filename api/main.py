@@ -31,17 +31,21 @@ COMMON_YDL_OPTS = {
     "no_warnings": True,
     "nocolor": True,
     "proxy": MY_PROXY,
-    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "referer": "https://www.youtube.com/",
     "geo_bypass": True,
     "nocheckcertificate": True,
+    "rm_cached_values": True,
     "extract_flat": False,
+    "youtube_include_dash_manifest": False, 
+    "extractor_args": {'youtube': {'player_client': ['android', 'web']}}, 
     "http_headers": {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-us,en;q=0.5",
         "Sec-Fetch-Mode": "navigate",
     }
 }
+
 def clean_ansi(text):
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
