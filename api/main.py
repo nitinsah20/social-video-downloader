@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
-MY_PROXY = "http://aadnsofg:u68dsbpmv5q8@142.111.48.253:7030"
+MY_PROXY = "http://aadnsofg:u68dsbpmv5q8@84.247.60.125"
 
 progress_db = {}
 
