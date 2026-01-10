@@ -2,4 +2,5 @@ fastapi
 uvicorn
 mangum
 requests
+python-dotenv
 yt-dlp>=2025.01.15
