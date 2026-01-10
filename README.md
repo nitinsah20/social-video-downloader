@@ -63,6 +63,7 @@ project-root/
 ## 🚀 Live Demo (Vercel)
 
 > ⚠️ Demo Only  
+   https://social-video-downloader-two.vercel.app/
 > Video info & thumbnails work  
 > MP4 / MP3 download may fail due to Vercel limitations
 
@@ -109,20 +110,40 @@ Supported VPS:
 
 ---
 
-## 🛠️ Local Development
+## 🛠️ Local Setup Instructions
 
-### Frontend
+### 1. Environment Variables
+
+Create a file named .env in the root directory and add the following configuration:
+\`\`\`env
+MY_PROXY=your_proxy_url
+YT_COOKIE_FILE=youtube_cookies.txt
+\`\`\`
+
+### 2. Cookies Setup
+
+To download age-restricted or private videos, you need to provide session cookies:
+
+1. Export your YouTube cookies from your browser in Netscape (.txt) format.
+
+2. Save the file as `youtube_cookies.txt` in the project root directory.
+
+3. Note: Ensure this file name matches the value set in your .env file.
+
+
+### 3. Frontend
 ```bash
 cd client
 npm install
 npm run dev
-
-### Backend (Python) 
+```
+### 4. Backend (Python)
+Navigate to the api folder and start the server:
 ```bash
 cd api
 pip install -r requirements.txt
-uvicorn api:app --reload --port 8000
-```
+# Since main.py is inside the api folder:
+uvicorn main:app --reload --port 8000
 
 
 

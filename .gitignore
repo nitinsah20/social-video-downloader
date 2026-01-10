@@ -20,3 +20,16 @@ instagram_cookies.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# Python virtual environments
+venv/
+env/
+ENV/
+
+# Distribution / Build folders (React build ke liye)
+dist/
+build/
+
+# IDE settings
+.vscode/
+.idea/

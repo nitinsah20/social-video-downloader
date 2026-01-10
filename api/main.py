@@ -4,6 +4,8 @@ from fastapi.responses import FileResponse, Response
 import yt_dlp
 import os, re, asyncio, time, requests
 from mangum import Mangum
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI()
 
@@ -20,8 +22,8 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-COOKIE_FILE = os.path.join(BASE_DIR, "youtube_cookies.txt")
-MY_PROXY = "http://aadnsofg:u68dsbpmv5q8@84.247.60.125:6095"
+raw_cookie_name = os.getenv("YT_COOKIE_FILE", "youtube_cookies.txt")
+MY_PROXY = os.getenv("MY_PROXY")
 
 progress_db = {}
 
@@ -79,8 +81,8 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
             "progress_hooks": [my_hook],
         })
 
-        if os.path.exists(COOKIE_FILE):
-            ydl_opts["cookiefile"] = COOKIE_FILE
+        if os.path.exists(raw_cookie_name):
+            ydl_opts["cookiefile"] = raw_cookie_name
 
         if file_type == "mp3":
             ydl_opts.update({
@@ -127,8 +129,8 @@ async def get_info(data: dict):
 
     try:
         opts = COMMON_YDL_OPTS.copy()
-        if os.path.exists(COOKIE_FILE):
-            opts["cookiefile"] = COOKIE_FILE
+        if os.path.exists(YT_COOKIE_FILE):
+            opts["cookiefile"] = YT_COOKIE_FILE
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
