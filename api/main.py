@@ -22,9 +22,10 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-raw_cookie_name = os.getenv("YT_COOKIE_FILE", "youtube_cookies.txt")
+cookie_filename = os.getenv("YT_COOKIE_FILE", "youtube_cookies.txt")
 MY_PROXY = os.getenv("MY_PROXY")
 
+COOKIE_PATH = os.path.join(BASE_DIR, cookie_filename)
 progress_db = {}
 
 # Common Options to prevent Bot Detection
@@ -81,8 +82,8 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
             "progress_hooks": [my_hook],
         })
 
-        if os.path.exists(raw_cookie_name):
-            ydl_opts["cookiefile"] = raw_cookie_name
+        if os.path.exists(COOKIE_PATH):
+            ydl_opts["cookiefile"] = COOKIE_PATH
 
         if file_type == "mp3":
             ydl_opts.update({
@@ -129,8 +130,8 @@ async def get_info(data: dict):
 
     try:
         opts = COMMON_YDL_OPTS.copy()
-        if os.path.exists(YT_COOKIE_FILE):
-            opts["cookiefile"] = YT_COOKIE_FILE
+        if os.path.exists(COOKIE_PATH):
+            opts["cookiefile"] = COOKIE_PATH
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
