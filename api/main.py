@@ -35,12 +35,12 @@ else:
 MY_PROXY = os.getenv("MY_PROXY")
 progress_db = {}
 
-# --- Aapke Original COMMON_YDL_OPTS (Unchanged) ---
+# --- Aapke Original COMMON_YDL_OPTS (Proxy Priority) ---
 COMMON_YDL_OPTS = {
+    "proxy": MY_PROXY,  # ✅ Sabse pehle proxy load hogi
     "quiet": True,
     "no_warnings": True,
     "nocolor": True,
-    "proxy": MY_PROXY,
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "referer": "https://www.youtube.com/",
     "geo_bypass": True,
@@ -91,6 +91,8 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
 
         if os.path.exists(COOKIE_PATH):
             ydl_opts["cookiefile"] = COOKIE_PATH
+            # ✅ RENDER FIX: Read-only system par lock nahi lagayega
+            ydl_opts["cookiefile_use_no_cache"] = True 
 
         if file_type == "mp3":
             ydl_opts.update({
@@ -139,6 +141,7 @@ async def get_info(data: dict):
         opts = COMMON_YDL_OPTS.copy()
         if os.path.exists(COOKIE_PATH):
             opts["cookiefile"] = COOKIE_PATH
+            opts["cookiefile_use_no_cache"] = True 
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
