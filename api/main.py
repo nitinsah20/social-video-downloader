@@ -18,17 +18,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# PATHS
+# --- PATHS (Fixed for Render Secrets) ---
 BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-cookie_filename = os.getenv("YT_COOKIE_FILE", "youtube_cookies.txt")
-MY_PROXY = os.getenv("MY_PROXY")
 
-COOKIE_PATH = os.path.join(BASE_DIR, cookie_filename)
+cookie_filename = os.getenv("YT_COOKIE_FILE", "youtube_cookies.txt")
+
+# ✅ RENDER FIX: Pehle check karega agar Render ki secret folder mein file hai
+RENDER_SECRET_PATH = f"/etc/secrets/{cookie_filename}"
+if os.path.exists(RENDER_SECRET_PATH):
+    COOKIE_PATH = RENDER_SECRET_PATH
+else:
+    COOKIE_PATH = os.path.join(BASE_DIR, cookie_filename)
+
+MY_PROXY = os.getenv("MY_PROXY")
 progress_db = {}
 
-# Common Options to prevent Bot Detection
+# --- Aapke Original COMMON_YDL_OPTS (Unchanged) ---
 COMMON_YDL_OPTS = {
     "quiet": True,
     "no_warnings": True,
