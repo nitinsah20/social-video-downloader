@@ -96,8 +96,8 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
             })
         else:
             ydl_opts.update({
-                "format": "bestvideo+bestaudio/best",
-                "merge_output_format": "mp4"
+                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                "merge_output_format": "mp4",
             })
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
