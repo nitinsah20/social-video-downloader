@@ -18,26 +18,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- PATHS (Fixed for Render Secrets) ---
+# --- PATHS ---
 BASE_DIR = os.path.dirname(__file__)
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# Cookies path (Abhi commented hai)
 cookie_filename = os.getenv("YT_COOKIE_FILE", "youtube_cookies.txt")
-
-# ✅ RENDER FIX: Pehle check karega agar Render ki secret folder mein file hai
-RENDER_SECRET_PATH = f"/etc/secrets/{cookie_filename}"
-if os.path.exists(RENDER_SECRET_PATH):
-    COOKIE_PATH = RENDER_SECRET_PATH
-else:
-    COOKIE_PATH = os.path.join(BASE_DIR, cookie_filename)
+# RENDER_SECRET_PATH = f"/etc/secrets/{cookie_filename}"
+# if os.path.exists(RENDER_SECRET_PATH):
+#     COOKIE_PATH = RENDER_SECRET_PATH
+# else:
+#     COOKIE_PATH = os.path.join(BASE_DIR, cookie_filename)
 
 MY_PROXY = os.getenv("MY_PROXY")
 progress_db = {}
 
-# --- Aapke Original COMMON_YDL_OPTS (Proxy Priority) ---
+# --- COMMON_YDL_OPTS ---
 COMMON_YDL_OPTS = {
-    "proxy": MY_PROXY,  # ✅ Sabse pehle proxy load hogi
+    "proxy": MY_PROXY,
     "quiet": True,
     "no_warnings": True,
     "nocolor": True,
@@ -67,41 +66,33 @@ async def auto_delete_file(file_path, delay=600):
 
 def my_hook(d):
     video_id = d.get("info_dict", {}).get("id")
-    if not video_id:
-        return
-
+    if not video_id: return
     if d["status"] == "downloading":
         try:
             percent = clean_ansi(d.get("_percent_str", "0")).replace("%", "")
             progress_db[video_id] = float(percent)
-        except:
-            pass
+        except: pass
     elif d["status"] == "finished":
         progress_db[video_id] = 95
 
 def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
     try:
         progress_db[video_id] = 1
-
         ydl_opts = COMMON_YDL_OPTS.copy()
         ydl_opts.update({
             "outtmpl": os.path.join(DOWNLOAD_DIR, f"{video_id}.%(ext)s"),
             "progress_hooks": [my_hook],
         })
 
-        if os.path.exists(COOKIE_PATH):
-            ydl_opts["cookiefile"] = COOKIE_PATH
-            # ✅ RENDER FIX: Read-only system par lock nahi lagayega
-            ydl_opts["cookiefile_use_no_cache"] = True 
+        # Cookies check (Commented Out)
+        # if os.path.exists(COOKIE_PATH):
+        #     ydl_opts["cookiefile"] = COOKIE_PATH
+        #     ydl_opts["cookiefile_use_no_cache"] = True 
 
         if file_type == "mp3":
             ydl_opts.update({
                 "format": "bestaudio/best",
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
-                }]
+                "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
             })
         else:
             ydl_opts.update({
@@ -126,26 +117,23 @@ def download_task(url, file_type, video_id, background_tasks: BackgroundTasks):
             background_tasks.add_task(auto_delete_file, new_file)
         else:
             progress_db[video_id] = -1
-
     except Exception as e:
-        print("DOWNLOAD ERROR:", e)
         progress_db[video_id] = -1
 
 @app.post("/info")
 async def get_info(data: dict):
     url = data.get("url")
-    if not url:
-        raise HTTPException(status_code=400, detail="URL missing")
-
+    if not url: raise HTTPException(status_code=400, detail="URL missing")
     try:
         opts = COMMON_YDL_OPTS.copy()
-        if os.path.exists(COOKIE_PATH):
-            opts["cookiefile"] = COOKIE_PATH
-            opts["cookiefile_use_no_cache"] = True 
+        
+        # Cookies use (Commented Out)
+        # if os.path.exists(COOKIE_PATH):
+        #     opts["cookiefile"] = COOKIE_PATH
+        #     opts["cookiefile_use_no_cache"] = True 
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
-
         return {
             "title": info.get("title"),
             "thumbnail": info.get("thumbnail"),
@@ -153,43 +141,30 @@ async def get_info(data: dict):
             "url": url
         }
     except Exception as e:
-        print(f"INFO ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/download")
 async def start_download(data: dict, background_tasks: BackgroundTasks):
-    video_id = data.get("video_id")
-    url = data.get("url")
-    fmt = data.get("format", "mp4")
-
-    if not video_id or not url:
-        raise HTTPException(status_code=400, detail="Missing data")
-
+    video_id, url, fmt = data.get("video_id"), data.get("url"), data.get("format", "mp4")
+    if not video_id or not url: raise HTTPException(status_code=400, detail="Missing data")
     progress_db[video_id] = 0
     background_tasks.add_task(download_task, url, fmt, video_id, background_tasks)
     return {"status": "started", "video_id": video_id}
 
 @app.get("/progress/{video_id}")
 async def get_progress(video_id: str):
-    return {
-        "progress": progress_db.get(video_id, 0),
-        "filename": progress_db.get(f"{video_id}_file")
-    }
+    return {"progress": progress_db.get(video_id, 0), "filename": progress_db.get(f"{video_id}_file")}
 
 @app.get("/file/{name}")
 async def serve_file(name: str):
     path = os.path.join(DOWNLOAD_DIR, name)
-    if os.path.exists(path):
-        return FileResponse(path, filename=name)
-    return {"error": "File not found"}
+    return FileResponse(path, filename=name) if os.path.exists(path) else {"error": "File not found"}
 
 @app.get("/thumbnail")
 def get_thumbnail(url: str):
     try:
         r = requests.get(url)
-        r.raise_for_status()
         return Response(content=r.content, media_type="image/webp")
-    except:
-        raise HTTPException(status_code=500, detail="Thumbnail fetch failed")
+    except: raise HTTPException(status_code=500, detail="Thumbnail fetch failed")
 
 handler = Mangum(app)
